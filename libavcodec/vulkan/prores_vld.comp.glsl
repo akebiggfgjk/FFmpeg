@@ -16,12 +16,13 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#version 460
 #pragma shader_stage(compute)
 #extension GL_GOOGLE_include_directive : require
 
-#define GET_BITS_SMEM 4
-#include "common.comp"
+/* Bitstream prefetch depth in 16-byte lines, set by the host */
+layout (constant_id = 1) const uint smem_lines = 4;
+#define GET_BITS_SMEM smem_lines
+#include "common.glsl"
 
 layout (constant_id = 0) const bool interlaced = false;
 
@@ -48,9 +49,6 @@ layout (push_constant, scalar) uniform pushConstants {
    uint8_t  depth;
    uint8_t  alpha_info;
    uint8_t  bottom_field;
-
-   uint8_t  qmat_luma  [8*8];
-   uint8_t  qmat_chroma[8*8];
 };
 
 /**

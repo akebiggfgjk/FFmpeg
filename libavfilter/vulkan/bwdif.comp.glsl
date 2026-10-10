@@ -18,7 +18,6 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
-#version 460
 #pragma shader_stage(compute)
 
 #extension GL_EXT_shader_image_load_formatted : require
@@ -27,10 +26,10 @@
 
 layout (local_size_x_id = 253, local_size_y_id = 254, local_size_z_id = 255) in;
 
-layout (set = 0, binding = 0) uniform readonly  image2D prev[];
-layout (set = 0, binding = 1) uniform readonly  image2D  cur[];
-layout (set = 0, binding = 2) uniform readonly  image2D next[];
-layout (set = 0, binding = 3) uniform writeonly image2D  dst[];
+layout (set = 0, binding = 0) uniform writeonly image2D  dst[];
+layout (set = 0, binding = 1) uniform readonly  image2D prev[];
+layout (set = 0, binding = 2) uniform readonly  image2D  cur[];
+layout (set = 0, binding = 3) uniform readonly  image2D next[];
 
 layout (push_constant, scalar) uniform pushConstants {
     int parity;
@@ -151,8 +150,8 @@ void main()
     bool filter_field = ((pos.y ^ parity) & 1) == 1;
     bool is_intra = filter_field && (current_field == 0);
 
-#define IS_WITHIN(v1, v2) ((v1.x < v2.x) && (v1.y < v2.y))
-    if (!IS_WITHIN(pos, imageSize(dst[nonuniformEXT(gl_LocalInvocationID.z)]))) {
+    ivec2 size = imageSize(dst[nonuniformEXT(gl_LocalInvocationID.z)]);
+    if (any(greaterThanEqual(pos, size))) {
         return;
     } else if (is_intra) {
         process_plane_intra(pos);

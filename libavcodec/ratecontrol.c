@@ -26,7 +26,6 @@
  */
 
 #include "libavutil/attributes.h"
-#include "libavutil/emms.h"
 #include "libavutil/internal.h"
 #include "libavutil/mem.h"
 
@@ -533,7 +532,6 @@ av_cold int ff_rate_control_init(MPVMainEncContext *const m)
         "qp2bits",
         NULL
     };
-    emms_c();
 
     if (!avctx->rc_max_available_vbv_use && avctx->rc_buffer_size) {
         if (avctx->rc_max_rate) {
@@ -573,9 +571,9 @@ av_cold int ff_rate_control_init(MPVMainEncContext *const m)
         char *p;
 
         /* find number of pics */
-        p = avctx->stats_in;
-        for (i = -1; p; i++)
-            p = strchr(p + 1, ';');
+        for (i = 0, p = avctx->stats_in;
+             i < INT_MAX / sizeof(RateControlEntry) && p && (p = strchr(p, ';')); i++)
+            p++;
         i += m->max_b_frames;
         if (i <= 0 || i >= INT_MAX / sizeof(RateControlEntry))
             return -1;
@@ -609,9 +607,11 @@ av_cold int ff_rate_control_init(MPVMainEncContext *const m)
                 next++;
             }
             e = sscanf(p, " in:%d ", &picture_number);
-
-            av_assert0(picture_number >= 0);
-            av_assert0(picture_number < rcc->num_entries);
+            if (e != 1 || picture_number < 0 || picture_number >= rcc->num_entries) {
+                av_log(avctx, AV_LOG_ERROR,
+                       "statistics are damaged at line %d, parser out=%d\n", i, e);
+                return -1;
+            }
             rce = &rcc->entry[picture_number];
 
             e += sscanf(p, " in:%*d out:%*d type:%d q:%f itex:%d ptex:%d "
@@ -628,6 +628,11 @@ av_cold int ff_rate_control_init(MPVMainEncContext *const m)
                 av_log(avctx, AV_LOG_ERROR,
                        "statistics are damaged at line %d, parser out=%d\n",
                        i, e);
+                return -1;
+            }
+            if (rce->pict_type < AV_PICTURE_TYPE_I || rce->pict_type > AV_PICTURE_TYPE_B) {
+                av_log(avctx, AV_LOG_ERROR, "invalid picture type %d at line %d\n",
+                       rce->pict_type, i);
                 return -1;
             }
 
@@ -710,8 +715,6 @@ av_cold int ff_rate_control_init(MPVMainEncContext *const m)
 
 av_cold void ff_rate_control_uninit(RateControlContext *rcc)
 {
-    emms_c();
-
     // rc_eq is always managed via an AVOption and therefore not freed here.
     av_expr_free(rcc->rc_eq_eval);
     rcc->rc_eq_eval = NULL;
@@ -927,7 +930,6 @@ float ff_rate_estimate_qscale(MPVMainEncContext *const m, int dry_run)
     double rate_factor;
     int64_t var;
     const int pict_type = s->c.pict_type;
-    emms_c();
 
     get_qminmax(&qmin, &qmax, m, pict_type);
 

@@ -151,6 +151,12 @@ av_warn_unused_result
 AVFilterFormats *ff_all_alpha_modes(void);
 
 /**
+ * Construct an AVFilterFormats representing all possible chroma locations.
+ */
+av_warn_unused_result
+AVFilterFormats *ff_all_chroma_locations(void);
+
+/**
  * Helpers for query_formats() which set all free audio links to the same list
  * of channel layouts/sample rates. If there are no links hooked to this list,
  * the list is freed.
@@ -233,6 +239,23 @@ int ff_set_common_alpha_modes_from_list(AVFilterContext *ctx,
 av_warn_unused_result
 int ff_set_common_all_alpha_modes(AVFilterContext *ctx);
 
+av_warn_unused_result
+int ff_set_common_chroma_locations(AVFilterContext *ctx,
+                                   AVFilterFormats *chroma_locations);
+
+/**
+ * Equivalent to ff_set_common_chroma_locations(ctx, ff_make_format_list(chroma_locations))
+ */
+av_warn_unused_result
+int ff_set_common_chroma_locations_from_list(AVFilterContext *ctx,
+                                             const int *chroma_locations);
+
+/**
+ * Equivalent to ff_set_common_chroma_locations(ctx, ff_all_chroma_locations())
+ */
+av_warn_unused_result
+int ff_set_common_all_chroma_locations(AVFilterContext *ctx);
+
 
 /**
  * A helper for query_formats() which sets all links to the same list of
@@ -247,6 +270,18 @@ int ff_set_common_formats(AVFilterContext *ctx, AVFilterFormats *formats);
  */
 av_warn_unused_result
 int ff_set_common_formats_from_list(AVFilterContext *ctx, const int *fmts);
+
+/**
+ * Equivalent to ff_set_common_formats(ctx, ff_make_sample_format_list(fmts))
+ */
+av_warn_unused_result
+int ff_set_sample_formats_from_list(AVFilterContext *ctx, const enum AVSampleFormat *fmts);
+
+/**
+ * Equivalent to ff_set_common_formats(ctx, ff_make_pixel_format_list(fmts))
+ */
+av_warn_unused_result
+int ff_set_pixel_formats_from_list(AVFilterContext *ctx, const enum AVPixelFormat *fmts);
 
 /**
  * Helpers for query_formats2() which set all free audio links to the same list
@@ -338,6 +373,23 @@ int ff_set_common_all_alpha_modes2(const AVFilterContext *ctx,
                                    AVFilterFormatsConfig **cfg_out);
 
 av_warn_unused_result
+int ff_set_common_chroma_locations2(const AVFilterContext *ctx,
+                                    AVFilterFormatsConfig **cfg_in,
+                                    AVFilterFormatsConfig **cfg_out,
+                                    AVFilterFormats *chroma_locations);
+
+av_warn_unused_result
+int ff_set_common_chroma_locations_from_list2(const AVFilterContext *ctx,
+                                              AVFilterFormatsConfig **cfg_in,
+                                              AVFilterFormatsConfig **cfg_out,
+                                              const int *chroma_locations);
+
+av_warn_unused_result
+int ff_set_common_all_chroma_locations2(const AVFilterContext *ctx,
+                                        AVFilterFormatsConfig **cfg_in,
+                                        AVFilterFormatsConfig **cfg_out);
+
+av_warn_unused_result
 int ff_set_common_formats2(const AVFilterContext *ctx,
                            AVFilterFormatsConfig **cfg_in,
                            AVFilterFormatsConfig **cfg_out,
@@ -348,6 +400,18 @@ int ff_set_common_formats_from_list2(const AVFilterContext *ctx,
                                      AVFilterFormatsConfig **cfg_in,
                                      AVFilterFormatsConfig **cfg_out,
                                      const int *fmts);
+
+av_warn_unused_result
+int ff_set_sample_formats_from_list2(const AVFilterContext *ctx,
+                                     AVFilterFormatsConfig **cfg_in,
+                                     AVFilterFormatsConfig **cfg_out,
+                                     const enum AVSampleFormat *fmts);
+
+av_warn_unused_result
+int ff_set_pixel_formats_from_list2(const AVFilterContext *ctx,
+                                    AVFilterFormatsConfig **cfg_in,
+                                    AVFilterFormatsConfig **cfg_out,
+                                    const enum AVPixelFormat *fmts);
 
 av_warn_unused_result
 int ff_add_channel_layout(AVFilterChannelLayouts **l,
@@ -384,6 +448,26 @@ int ff_default_query_formats(AVFilterContext *ctx);
  */
 av_warn_unused_result
 AVFilterFormats *ff_make_format_list(const int *fmts);
+
+/**
+ * Create a list of supported sample formats. This is intended for use in
+ * AVFilter->query_formats().
+ *
+ * @param fmts list of enum AVSampleFormat, terminated by AV_SAMPLE_FMT_NONE
+ * @return the format list, with no existing references
+ */
+av_warn_unused_result
+AVFilterFormats *ff_make_sample_format_list(const enum AVSampleFormat *fmts);
+
+/**
+ * Create a list of supported pixel formats. This is intended for use in
+ * AVFilter->query_formats().
+ *
+ * @param fmts list of enum AVPixelFormat, terminated by AV_PIX_FMT_NONE
+ * @return the format list, with no existing references
+ */
+av_warn_unused_result
+AVFilterFormats *ff_make_pixel_format_list(const enum AVPixelFormat *fmts);
 
 /**
  * Equivalent to ff_make_format_list({const int[]}{ fmt, -1 })
@@ -512,6 +596,13 @@ int ff_formats_check_color_ranges(void *log, const AVFilterFormats *fmts);
  * In particular, check for duplicates.
  */
 int ff_formats_check_alpha_modes(void *log, const AVFilterFormats *fmts);
+
+/**
+ * Check that fmts is a valid formats list for chroma locations.
+ *
+ * In particular, check for duplicates.
+ */
+int ff_formats_check_chroma_locations(void *log, const AVFilterFormats *fmts);
 
 struct AVBPrint;
 

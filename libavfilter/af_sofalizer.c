@@ -646,7 +646,7 @@ static int query_formats(const AVFilterContext *ctx,
         AV_SAMPLE_FMT_NONE
     };
 
-    ret = ff_set_common_formats_from_list2(ctx, cfg_in, cfg_out, sample_fmts);
+    ret = ff_set_sample_formats_from_list2(ctx, cfg_in, cfg_out, sample_fmts);
     if (ret)
         return ret;
 
@@ -742,7 +742,7 @@ static int load_data(AVFilterContext *ctx, int azim, int elev, float radius, int
 
     av_log(ctx, AV_LOG_DEBUG, "IR length: %d.\n", s->sofa.hrtf->N);
     s->sofa.ir_samples = s->sofa.hrtf->N;
-    s->sofa.n_samples = 1 << (32 - ff_clz(s->sofa.ir_samples));
+    s->sofa.n_samples = FFMAX(32, 1 << (32 - ff_clz(s->sofa.ir_samples)));
 
     n_samples = s->sofa.n_samples;
     ir_samples = s->sofa.ir_samples;
